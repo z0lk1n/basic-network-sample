@@ -14,6 +14,9 @@ interface ApiService {
   @GET("search")
   fun getPhotos(@Query("query") endpoint: String = "nature"): Call<ObjectResponse>
 
+  @GET("search")
+  suspend fun getPhotosCoroutines(@Query("query") endpoint: String = "nature"): ObjectResponse
+
   companion object {
 
     fun create(): ApiService {
