@@ -1,11 +1,11 @@
 package com.example.basic_network_sample.ui
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.basic_network_sample.App
 import com.example.basic_network_sample.R
@@ -16,7 +16,9 @@ import com.example.basic_network_sample.utils.network_state_manager.NetworkState
 import com.example.basic_network_sample.utils.network_state_manager.NetworkStateManagerImpl
 import com.example.basic_network_sample.utils.show
 import com.example.basic_network_sample.utils.toast
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class CoroutinesFragment : Fragment(), NetworkStateManager.OnNetworkStateChangeListener {
 
@@ -24,10 +26,6 @@ class CoroutinesFragment : Fragment(), NetworkStateManager.OnNetworkStateChangeL
 
   // This property is only valid between onCreateView and onDestroyView.
   private val binding get() = _binding!!
-  private val coroutineScope = MainScope()
-  private val handler = CoroutineExceptionHandler { _, exception ->
-    Log.e(CoroutinesFragment::class.java.simpleName, "CoroutineExceptionHandler got $exception")
-  }
   private var networkStateManager: NetworkStateManager? = null
   private val photoAdapter = PhotoAdapter()
   private var hasData: Boolean = false
@@ -61,14 +59,13 @@ class CoroutinesFragment : Fragment(), NetworkStateManager.OnNetworkStateChangeL
   private fun requestData() {
     if (hasData) return
 
-    coroutineScope.launch(handler) {
+    viewLifecycleOwner.lifecycleScope.launch {
       showProgressBar(isShow = true)
 
       try {
         val photos: List<PhotoResponse> = withContext(Dispatchers.IO) {
           App.instance.apiService.getPhotosCoroutines().photos
         }
-
         processRequestResult(isSuccess = true)
         photoAdapter.addPhotos(photos)
       } catch (e: Exception) {
@@ -105,7 +102,6 @@ class CoroutinesFragment : Fragment(), NetworkStateManager.OnNetworkStateChangeL
   override fun onDestroyView() {
     super.onDestroyView()
     networkStateManager?.unregister()
-    coroutineScope.cancel()
     _binding = null
   }
 }
